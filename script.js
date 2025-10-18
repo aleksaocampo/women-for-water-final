@@ -22,7 +22,15 @@ let running = false; // true while game logic should run
 const waterImg = new Image();
 waterImg.src = 'img/Waterdrop.png';
 let waterImgLoaded = false;
-waterImg.onload = () => { waterImgLoaded = true; };
+let waterImgNatural = { w: 0, h: 0 };
+waterImg.onload = () => { waterImgLoaded = true; waterImgNatural.w = waterImg.naturalWidth; waterImgNatural.h = waterImg.naturalHeight; };
+
+// Preload person image for snake segments
+const personImg = new Image();
+personImg.src = 'img/Person.png';
+let personImgLoaded = false;
+let personImgNatural = { w: 0, h: 0 };
+personImg.onload = () => { personImgLoaded = true; personImgNatural.w = personImg.naturalWidth; personImgNatural.h = personImg.naturalHeight; };
 
 function initGame() {
   // clear previous game state / handlers if any
@@ -106,53 +114,49 @@ function loop(timestamp) {
 
 function draw(interp = 1) {
   ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
-  // Draw body segments as squares (skip index 0 which is the head)
-  ctx.fillStyle = '#0077b6';
-  for (let i = 1; i < snake.length; i++) {
-    const segment = snake[i];
-    ctx.fillRect(segment.x, segment.y, box - 2, box - 2);
-  }
-
-  // Draw head as a triangle pointing in the current direction
-  if (snake.length > 0) {
-    // interpolate head position between prevSnake[0] and snake[0]
-    const prevHead = prevSnake[0] || snake[0];
-    const nextHead = snake[0];
-    const headPos = {
-      x: Math.round(prevHead.x + (nextHead.x - prevHead.x) * interp),
-      y: Math.round(prevHead.y + (nextHead.y - prevHead.y) * interp)
+  // Draw snake segments (all segments as person images if available, interpolated)
+  for (let i = 0; i < snake.length; i++) {
+    const prev = prevSnake[i] || snake[i];
+    const next = snake[i];
+    const segPos = {
+      x: Math.round(prev.x + (next.x - prev.x) * interp),
+      y: Math.round(prev.y + (next.y - prev.y) * interp)
     };
-    const padding = 2; // small padding so the triangle doesn't touch the border
-    ctx.fillStyle = '#023e8a';
-    ctx.beginPath();
-    if (direction === 'RIGHT') {
-      ctx.moveTo(headPos.x + box - padding, headPos.y + box / 2); // tip
-      ctx.lineTo(headPos.x + padding, headPos.y + padding);
-      ctx.lineTo(headPos.x + padding, headPos.y + box - padding);
-    } else if (direction === 'LEFT') {
-      ctx.moveTo(headPos.x + padding, headPos.y + box / 2);
-      ctx.lineTo(headPos.x + box - padding, headPos.y + padding);
-      ctx.lineTo(headPos.x + box - padding, headPos.y + box - padding);
-    } else if (direction === 'UP') {
-      ctx.moveTo(headPos.x + box / 2, headPos.y + padding);
-      ctx.lineTo(headPos.x + padding, headPos.y + box - padding);
-      ctx.lineTo(headPos.x + box - padding, headPos.y + box - padding);
-    } else if (direction === 'DOWN') {
-      ctx.moveTo(headPos.x + box / 2, headPos.y + box - padding);
-      ctx.lineTo(headPos.x + padding, headPos.y + padding);
-      ctx.lineTo(headPos.x + box - padding, headPos.y + padding);
+
+    if (personImgLoaded && personImgNatural.w && personImgNatural.h) {
+      // fit image inside a square box while preserving aspect ratio
+      const maxSize = box * 0.9;
+      const ratio = personImgNatural.w / personImgNatural.h;
+      let drawW = maxSize;
+      let drawH = maxSize;
+      if (ratio > 1) {
+        // wider than tall
+        drawH = Math.round(maxSize / ratio);
+      } else if (ratio < 1) {
+        // taller than wide
+        drawW = Math.round(maxSize * ratio);
+      }
+      const imgX = segPos.x + Math.floor((box - drawW) / 2);
+      const imgY = segPos.y + Math.floor((box - drawH) / 2);
+      ctx.drawImage(personImg, imgX, imgY, drawW, drawH);
+    } else {
+      ctx.fillStyle = '#0077b6';
+      ctx.fillRect(segPos.x, segPos.y, box - 2, box - 2);
     }
-    ctx.closePath();
-    ctx.fill();
   }
 
   ctx.fillStyle = '#00b4d8';
   // Try to draw the water drop image centered in the cell. Fall back to a circle.
-  if (waterImgLoaded) {
-    const imgSize = Math.round(box * 0.8); // slightly smaller than cell
-    const imgX = waterDrop.x + Math.floor((box - imgSize) / 2);
-    const imgY = waterDrop.y + Math.floor((box - imgSize) / 2);
-    ctx.drawImage(waterImg, imgX, imgY, imgSize, imgSize);
+  if (waterImgLoaded && waterImgNatural.w && waterImgNatural.h) {
+    const maxSize = box * 0.8; // slightly smaller than cell
+    const ratio = waterImgNatural.w / waterImgNatural.h;
+    let drawW = maxSize;
+    let drawH = maxSize;
+    if (ratio > 1) drawH = Math.round(maxSize / ratio);
+    else if (ratio < 1) drawW = Math.round(maxSize * ratio);
+    const imgX = waterDrop.x + Math.floor((box - drawW) / 2);
+    const imgY = waterDrop.y + Math.floor((box - drawH) / 2);
+    ctx.drawImage(waterImg, imgX, imgY, drawW, drawH);
   } else {
     ctx.beginPath();
     ctx.arc(waterDrop.x + box / 2, waterDrop.y + box / 2, box / 3, 0, Math.PI * 2);
