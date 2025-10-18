@@ -18,6 +18,11 @@ let lastTick = 0; // timestamp of last logical move
 const tickInterval = speed; // ms per logical move
 let prevSnake = []; // store previous logical positions for interpolation
 let running = false; // true while game logic should run
+// Preload water drop image (match actual filename in img/ which is case-sensitive)
+const waterImg = new Image();
+waterImg.src = 'img/Waterdrop.png';
+let waterImgLoaded = false;
+waterImg.onload = () => { waterImgLoaded = true; };
 
 function initGame() {
   // clear previous game state / handlers if any
@@ -142,9 +147,17 @@ function draw(interp = 1) {
   }
 
   ctx.fillStyle = '#00b4d8';
-  ctx.beginPath();
-  ctx.arc(waterDrop.x + box / 2, waterDrop.y + box / 2, box / 3, 0, Math.PI * 2);
-  ctx.fill();
+  // Try to draw the water drop image centered in the cell. Fall back to a circle.
+  if (waterImgLoaded) {
+    const imgSize = Math.round(box * 0.8); // slightly smaller than cell
+    const imgX = waterDrop.x + Math.floor((box - imgSize) / 2);
+    const imgY = waterDrop.y + Math.floor((box - imgSize) / 2);
+    ctx.drawImage(waterImg, imgX, imgY, imgSize, imgSize);
+  } else {
+    ctx.beginPath();
+    ctx.arc(waterDrop.x + box / 2, waterDrop.y + box / 2, box / 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   // Rendering-only code stops here. Logical movement handled in tick().
 }

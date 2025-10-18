@@ -11,9 +11,13 @@ body {
 }
 
 h1 {
+  /* Use a serif similar to the charity: water wordmark */
+  font-family: 'Playfair Display', serif;
+  font-weight: 400;
   font-size: 2rem;
   color: #73A9AD;
   margin-bottom: 1rem;
+  letter-spacing: 0.02em;
 }
 
 #gameCanvas {
@@ -41,6 +45,32 @@ h1 {
 #score {
   font-size: 1.2rem;
   margin-top: 1rem;
+  /* Match heading font for a cohesive look */
+  font-family: 'Playfair Display', serif;
+  font-weight: 400;
+}
+
+/* Bottom centered logo */
+#cwLogo {
+  display: block;
+  max-width: 240px;
+  width: 40vw;
+  height: auto;
+  margin: 1.2rem auto 0 auto; /* center horizontally, small gap above */
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.15));
+}
+
+/* Game over and final score use the same serif */
+#gameOver h2 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 400;
+  color: #73A9AD;
+}
+
+#finalScore {
+  font-family: 'Playfair Display', serif;
+  font-weight: 400;
+  font-size: 1.1rem;
 }
 
 @media (min-width: 768px) {
