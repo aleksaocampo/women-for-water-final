@@ -4,7 +4,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #f2f9ff;
+  background: #F5F0BB;
   font-family: 'Poppins', sans-serif;
   color: #333;
   height: 100vh;
@@ -12,13 +12,13 @@ body {
 
 h1 {
   font-size: 2rem;
-  color: #0077b6;
+  color: #73A9AD;
   margin-bottom: 1rem;
 }
 
 #gameCanvas {
-  background: #caf0f8;
-  border: 3px solid #0077b6;
+  background: #C4DFAA;
+  border: 3px solid #90C8AC;
   border-radius: 10px;
 }
 
@@ -28,7 +28,7 @@ h1 {
 
 #startBtn,
 #restartBtn {
-  background: #0077b6;
+  background: #73A9AD;
   color: white;
   border: none;
   padding: 0.7rem 1.5rem;

@@ -12,11 +12,17 @@ let snake = [];
 let direction = 'RIGHT';
 let waterDrop = {};
 let score = 0;
-let gameInterval;
+let gameInterval; // legacy, kept for reference
+let animationId = null; // requestAnimationFrame id
+let lastTick = 0; // timestamp of last logical move
+const tickInterval = speed; // ms per logical move
+let prevSnake = []; // store previous logical positions for interpolation
+let running = false; // true while game logic should run
 
 function initGame() {
   // clear previous game state / handlers if any
-  clearInterval(gameInterval);
+  if (gameInterval) clearInterval(gameInterval);
+  if (animationId) cancelAnimationFrame(animationId);
   // avoid multiple key listeners stacking
   document.removeEventListener('keydown', changeDirection);
 
@@ -26,7 +32,12 @@ function initGame() {
   scoreDisplay.textContent = `Score: ${score}`;
   spawnWater();
   document.addEventListener('keydown', changeDirection);
-  gameInterval = setInterval(draw, speed);
+  // initialize previous positions for interpolation
+  prevSnake = snake.map(seg => ({ x: seg.x, y: seg.y }));
+  lastTick = performance.now();
+  running = true;
+  // start RAF loop
+  animationId = requestAnimationFrame(loop);
 }
 
 function spawnWater() {
@@ -64,17 +75,84 @@ function changeDirection(e) {
   else if (e.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
 }
 
-function draw() {
+function loop(timestamp) {
+  if (!running) return; // stop scheduling frames if game not running
+  // timestamp provided by RAF; calculate progress since lastTick
+  const elapsed = timestamp - lastTick;
+
+  // If enough time passed, perform a logical tick (move snake)
+  if (elapsed >= tickInterval) {
+    // advance lastTick by multiples of tickInterval to avoid drift
+    const steps = Math.floor(elapsed / tickInterval);
+    for (let s = 0; s < steps; s++) {
+      tick();
+    }
+    lastTick = timestamp - (elapsed % tickInterval);
+  }
+
+  // Calculate interpolation factor for rendering between ticks
+  const interp = Math.min(1, (timestamp - lastTick) / tickInterval);
+
+  // Render using interpolated positions
+  draw(interp);
+
+  animationId = requestAnimationFrame(loop);
+}
+
+function draw(interp = 1) {
   ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+  // Draw body segments as squares (skip index 0 which is the head)
   ctx.fillStyle = '#0077b6';
-  snake.forEach((segment) => {
+  for (let i = 1; i < snake.length; i++) {
+    const segment = snake[i];
     ctx.fillRect(segment.x, segment.y, box - 2, box - 2);
-  });
+  }
+
+  // Draw head as a triangle pointing in the current direction
+  if (snake.length > 0) {
+    // interpolate head position between prevSnake[0] and snake[0]
+    const prevHead = prevSnake[0] || snake[0];
+    const nextHead = snake[0];
+    const headPos = {
+      x: Math.round(prevHead.x + (nextHead.x - prevHead.x) * interp),
+      y: Math.round(prevHead.y + (nextHead.y - prevHead.y) * interp)
+    };
+    const padding = 2; // small padding so the triangle doesn't touch the border
+    ctx.fillStyle = '#023e8a';
+    ctx.beginPath();
+    if (direction === 'RIGHT') {
+      ctx.moveTo(headPos.x + box - padding, headPos.y + box / 2); // tip
+      ctx.lineTo(headPos.x + padding, headPos.y + padding);
+      ctx.lineTo(headPos.x + padding, headPos.y + box - padding);
+    } else if (direction === 'LEFT') {
+      ctx.moveTo(headPos.x + padding, headPos.y + box / 2);
+      ctx.lineTo(headPos.x + box - padding, headPos.y + padding);
+      ctx.lineTo(headPos.x + box - padding, headPos.y + box - padding);
+    } else if (direction === 'UP') {
+      ctx.moveTo(headPos.x + box / 2, headPos.y + padding);
+      ctx.lineTo(headPos.x + padding, headPos.y + box - padding);
+      ctx.lineTo(headPos.x + box - padding, headPos.y + box - padding);
+    } else if (direction === 'DOWN') {
+      ctx.moveTo(headPos.x + box / 2, headPos.y + box - padding);
+      ctx.lineTo(headPos.x + padding, headPos.y + padding);
+      ctx.lineTo(headPos.x + box - padding, headPos.y + padding);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
 
   ctx.fillStyle = '#00b4d8';
   ctx.beginPath();
   ctx.arc(waterDrop.x + box / 2, waterDrop.y + box / 2, box / 3, 0, Math.PI * 2);
   ctx.fill();
+
+  // Rendering-only code stops here. Logical movement handled in tick().
+}
+
+// Perform a single logical tick (move snake by one grid cell)
+function tick() {
+  // store previous positions for interpolation
+  prevSnake = snake.map(seg => ({ x: seg.x, y: seg.y }));
 
   let head = { ...snake[0] };
   if (direction === 'UP') head.y -= box;
@@ -114,7 +192,9 @@ function snakeCollision(head) {
 }
 
 function gameOver() {
-  clearInterval(gameInterval);
+  if (gameInterval) clearInterval(gameInterval);
+  if (animationId) cancelAnimationFrame(animationId);
+  running = false;
   gameCanvas.style.display = 'none';
   scoreDisplay.style.display = 'none';
   gameOverScreen.style.display = 'block';
@@ -122,7 +202,9 @@ function gameOver() {
 }
 
 function winGame() {
-  clearInterval(gameInterval);
+  if (gameInterval) clearInterval(gameInterval);
+  if (animationId) cancelAnimationFrame(animationId);
+  running = false;
   gameCanvas.style.display = 'none';
   scoreDisplay.style.display = 'none';
   gameOverScreen.style.display = 'block';
