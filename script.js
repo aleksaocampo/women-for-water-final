@@ -42,6 +42,13 @@ function initGame() {
   snake = [{ x: 5 * box, y: 5 * box }];
   direction = 'RIGHT';
   score = 0;
+  // determine target score from difficulty select
+  const diff = document.getElementById('difficultySelect')?.value || 'medium';
+  let targetScore = 10;
+  if (diff === 'easy') targetScore = 5;
+  else if (diff === 'hard') targetScore = 15;
+  // store on window so other functions can read it
+  window.targetScore = targetScore;
   scoreDisplay.textContent = `Score: ${score}`;
   spawnWater();
   document.addEventListener('keydown', changeDirection);
@@ -179,9 +186,9 @@ function tick() {
 
   if (head.x === waterDrop.x && head.y === waterDrop.y) {
     score++;
-    scoreDisplay.textContent = `Score: ${score}`;
+    scoreDisplay.textContent = `Score: ${score} / ${window.targetScore || 10}`;
     // If player reached the target score, they win
-    if (score >= 10) {
+    if (score >= (window.targetScore || 10)) {
       winGame();
       return;
     }

@@ -11,6 +11,12 @@
 <body>
   <div id="ui">
     <h1>Women For Water</h1>
+    <label for="difficultySelect">Difficulty:</label>
+    <select id="difficultySelect" aria-label="Select difficulty">
+      <option value="easy">Easy (5)</option>
+      <option value="medium" selected>Medium (10)</option>
+      <option value="hard">Hard (15)</option>
+    </select>
     <button id="startBtn">Start</button>
     <div id="score" style="display:none;">Score: 0</div>
     <canvas id="gameCanvas" width="300" height="300" style="display:none;"></canvas>
