@@ -9,21 +9,33 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!-- Sound toggle in top-left -->
+  <div id="soundControl">
+    <label for="soundToggle"><input type="checkbox" id="soundToggle" /> Sound</label>
+  </div>
+
   <div id="ui">
     <h1>Women For Water</h1>
-    <label for="difficultySelect">Difficulty:</label>
-    <select id="difficultySelect" aria-label="Select difficulty">
-      <option value="easy">Easy (5)</option>
-      <option value="medium" selected>Medium (10)</option>
-      <option value="hard">Hard (15)</option>
-    </select>
+  <p id="subtitle">Women play a pivotal role in water access! Use the arrow keys to gather as many water droplets as you can.</p>
     <button id="startBtn">Start</button>
     <div id="score" style="display:none;">Score: 0</div>
     <canvas id="gameCanvas" width="300" height="300" style="display:none;"></canvas>
     <div id="gameOver" style="display:none;">
       <h2>Game Over</h2>
       <p id="finalScore"></p>
+      <label for="difficultySelect">Difficulty:</label>
+      <select id="difficultySelect" aria-label="Select difficulty">
+        <option value="easy">Easy (5)</option>
+        <option value="medium" selected>Medium (10)</option>
+        <option value="hard">Hard (15)</option>
+      </select>
       <button id="restartBtn">Play Again</button>
+      <div id="charityBlurb">
+        <p>Learn more about Charity: Water's mission and just how important women are in water access.</p>
+        <a id="learnMore" href="https://www.charitywater.org/global-water-crisis?_gl=1*1ttc5l7*_up*MQ..*_gs*MQ..&gclid=Cj0KCQjw9czHBhCyARIsAFZlN8QCkL7SArGi5MQsrM377M2uy8WYmJUP8Av_6l_lfp0W5twkHLkqKYsaAi6OEALw_wcB&gbraid=0AAAAADNj5D8Tjw26MnEvFL7ZzYps069C2#" target="_blank" rel="noopener"> 
+          <button class="learnBtn">Learn more</button>
+        </a>
+      </div>
     </div>
     <!-- Charity: water horizontal logo (place image at img/cw_logo_horizontal.png) -->
     <img id="cwLogo" src="img/cw_logo_horizontal.png" alt="charity: water logo" />

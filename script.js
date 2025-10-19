@@ -15,7 +15,7 @@ let score = 0;
 let gameInterval; // legacy, kept for reference
 let animationId = null; // requestAnimationFrame id
 let lastTick = 0; // timestamp of last logical move
-const tickInterval = speed; // ms per logical move
+let tickInterval = speed; // ms per logical move (adjustable by difficulty)
 let prevSnake = []; // store previous logical positions for interpolation
 let running = false; // true while game logic should run
 // Preload water drop image (match actual filename in img/ which is case-sensitive)
@@ -31,6 +31,51 @@ personImg.src = 'img/Person.png';
 let personImgLoaded = false;
 let personImgNatural = { w: 0, h: 0 };
 personImg.onload = () => { personImgLoaded = true; personImgNatural.w = personImg.naturalWidth; personImgNatural.h = personImg.naturalHeight; };
+
+// Sound: simple WebAudio 'ding' and toggle
+let audioCtx = null;
+let soundEnabled = true;
+const SOUND_KEY = 'wfw_sound_enabled';
+// restore preference
+try { const stored = localStorage.getItem(SOUND_KEY); if (stored !== null) soundEnabled = stored === '1'; } catch(e) {}
+
+function ensureAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+}
+
+function playDing() {
+  if (!soundEnabled) return;
+  try {
+    ensureAudio();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(880, audioCtx.currentTime);
+    o.connect(g);
+    g.connect(audioCtx.destination);
+    g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime + 0.01);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.18);
+    o.stop(audioCtx.currentTime + 0.2);
+  } catch (e) {
+    // ignore audio errors
+  }
+}
+
+// wire up sound toggle UI
+window.addEventListener('load', () => {
+  const toggle = document.getElementById('soundToggle');
+  if (toggle) {
+    toggle.checked = soundEnabled;
+    toggle.addEventListener('change', (e) => {
+      soundEnabled = !!e.target.checked;
+      try { localStorage.setItem(SOUND_KEY, soundEnabled ? '1' : '0'); } catch (err) {}
+    });
+  }
+});
 
 function initGame() {
   // clear previous game state / handlers if any
@@ -49,7 +94,12 @@ function initGame() {
   else if (diff === 'hard') targetScore = 15;
   // store on window so other functions can read it
   window.targetScore = targetScore;
-  scoreDisplay.textContent = `Score: ${score}`;
+  // adjust speed by difficulty (higher difficulty = faster = smaller interval)
+  if (diff === 'easy') tickInterval = 300;
+  else if (diff === 'medium') tickInterval = 220;
+  else if (diff === 'hard') tickInterval = 140;
+
+  scoreDisplay.textContent = `Score: ${score} / ${window.targetScore}`;
   spawnWater();
   document.addEventListener('keydown', changeDirection);
   // initialize previous positions for interpolation
@@ -192,6 +242,9 @@ function tick() {
       winGame();
       return;
     }
+    // Play ding (resume audio context on user gesture if needed)
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    playDing();
     spawnWater();
   } else {
     snake.pop();
@@ -223,6 +276,9 @@ function gameOver() {
   scoreDisplay.style.display = 'none';
   gameOverScreen.style.display = 'block';
   finalScore.textContent = `Score: ${score}`;
+  // hide subtitle on game over
+  const subtitleEl = document.getElementById('subtitle');
+  if (subtitleEl) subtitleEl.style.display = 'none';
 }
 
 function winGame() {
@@ -233,12 +289,17 @@ function winGame() {
   scoreDisplay.style.display = 'none';
   gameOverScreen.style.display = 'block';
   finalScore.textContent = `You win! Final score: ${score}`;
+  const subtitleEl = document.getElementById('subtitle');
+  if (subtitleEl) subtitleEl.style.display = 'none';
 }
 
 startBtn.onclick = () => {
   startBtn.style.display = 'none';
   gameCanvas.style.display = 'block';
   scoreDisplay.style.display = 'block';
+  // ensure subtitle visible when starting a game
+  const subtitleEl = document.getElementById('subtitle');
+  if (subtitleEl) subtitleEl.style.display = 'block';
   initGame();
 };
 
@@ -246,5 +307,8 @@ restartBtn.onclick = () => {
   gameOverScreen.style.display = 'none';
   gameCanvas.style.display = 'block';
   scoreDisplay.style.display = 'block';
+  // show subtitle again when restarting
+  const subtitleEl = document.getElementById('subtitle');
+  if (subtitleEl) subtitleEl.style.display = 'block';
   initGame();
 };
